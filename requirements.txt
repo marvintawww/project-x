@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+sqlalchemy
+aiosqlite
+aio_pika
+python-jose[cryptography]
+passlib[argon2]
