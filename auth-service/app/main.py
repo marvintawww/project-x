@@ -2,10 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import Base, get_db, engine
-from .crud import create_user, authenticate_user, deactivate_user
+from .crud import create_user, authenticate_user, deactivate_user, get_user_by_id
 from .schemas import AuthResponseSchema, RegisterSchema, RefreshTokenSchema, AuthInfo, LoginSchema, TokenResponseSchema
 from .sender import send_event
-from .jwt import refresh_access_token, get_current_user_id
+from .jwt import refresh_access_token, get_current_user, required_role
 
 
 app = FastAPI(
@@ -82,9 +82,26 @@ async def refresh_token_pair(data: RefreshTokenSchema):
     summary='Deactivate account',
     tags=['Auth']
 )
-async def account_delete(user_id: int = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
+async def account_delete(user: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     send_event({
         'event_type': 'Account Deactivate',
+        'is_active': False
+    })
+    
+    return await deactivate_user(db=db, user_id=user.get('id'))
+
+
+
+@app.post(
+    '/account-delete/{user_id}',
+    response_model=AuthInfo,
+    summary='Deactivate other user account (Admin abillity)',
+    tags=['Auth']
+)
+async def delete_account_by_id(user_id: int, admin = Depends(required_role('admin')), db: AsyncSession = Depends(get_db)):
+    send_event({
+        'event_type': 'Account Deactivate',
+        'user_id': user_id,
         'is_active': False
     })
     

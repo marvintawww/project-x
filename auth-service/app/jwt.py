@@ -5,6 +5,7 @@ from jose import jwt, JWTError
 import secrets
 from typing import Optional
 
+
 SECRET = 'super-secret'
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -13,8 +14,9 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 def create_access_token(user_id: int) -> str:
     payload = {
-        'sub': str(user_id), # Очень важная конвертация, без нее нифига нормально работать не будет.
+        'sub': str(user_id), 
         'exp': datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        'role':'user',
         'type': 'access'
     }
     return jwt.encode(payload, SECRET, algorithm=ALGORITHM)
@@ -27,6 +29,7 @@ def create_refresh_token(user_id: int, token_id: Optional[str] = None) -> str:
     payload = {
         'sub': str(user_id),
         'exp': datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        'role': 'user',
         'type': 'refresh',
         'jti': token_id,
         'iat': datetime.now(timezone.utc).timestamp()
@@ -66,18 +69,28 @@ def refresh_access_token(refresh_token: str):
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/login')
 
-def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
-    try:
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> dict: #! Возможно потом сменить на схему
+    try: 
         payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
-        try:
-            return int(payload.get('sub'))
-        except (TypeError, ValueError):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid Token'
-            )
-    except JWTError as e:
+        return {
+            'id': int(payload.get('sub')),
+            'role': payload.get('role')
+        }
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f'Error {str(e)}'
+            detail='Invalid Token'
         )
+        
+
+
+def required_role(role: str):
+    async def role_checker(user: int = Depends(get_current_user)):
+        if role not in user['role']:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid Role'
+            )
+        return user.get('id')
+    return required_role

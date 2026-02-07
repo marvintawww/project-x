@@ -23,7 +23,7 @@ async def create_user(db: AsyncSession, login: str, email: str, password: str) -
         UserAuthInfo.is_active == True
     ))
     
-    result = (await db.execute(stmt)).scalar_one_or_none()
+    result = (await db.execute(stmt)).scalar_one_or_none() #! Поменять 'result' на что-то другое
     
     if result:
         raise HTTPException(
