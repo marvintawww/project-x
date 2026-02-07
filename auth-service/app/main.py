@@ -61,7 +61,7 @@ async def login(login_data: LoginSchema, db: AsyncSession = Depends(get_db)):
 
 @app.post(
     '/refresh',
-    response_model=TokenResponseSchema, #! Позже поменять на Pydantic схему
+    response_model=TokenResponseSchema,
     summary='Refresh atoken pair',
     tags=['Auth']
 )
@@ -83,4 +83,9 @@ async def refresh_token_pair(data: RefreshTokenSchema):
     tags=['Auth']
 )
 async def account_delete(user_id: int = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
-    return deactivate_user(db=db, user_id=user_id)
+    send_event({
+        'event_type': 'Account Deactivate',
+        'is_active': False
+    })
+    
+    return await deactivate_user(db=db, user_id=user_id)

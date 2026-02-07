@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, and_
 
 from .models import UserAuthInfo
 from .schemas import AuthCreateSchema
@@ -15,11 +15,13 @@ async def create_user(db: AsyncSession, login: str, email: str, password: str) -
         hashed_password=hash_password(password)
     )
     
-    stmt = select(UserAuthInfo).where(
+    stmt = select(UserAuthInfo).where(and_(
         or_(
             UserAuthInfo.login == login,
             UserAuthInfo.email == email
-        ))
+        ), 
+        UserAuthInfo.is_active == True
+    ))
     
     result = (await db.execute(stmt)).scalar_one_or_none()
     
@@ -37,8 +39,8 @@ async def create_user(db: AsyncSession, login: str, email: str, password: str) -
     
     token_pair = create_token_pair(auth.id)
     
-    
     return auth, token_pair
+
 
 
 async def authenticate_user(db: AsyncSession, login: str, password: str) -> tuple[UserAuthInfo, dict]:

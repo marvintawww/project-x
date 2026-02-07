@@ -26,6 +26,7 @@
                 }
             ]
         },
+
         {
             "endpoint": "/api/refresh",
             "method": "POST",
@@ -36,6 +37,19 @@
                     "method": "POST",
                     "host": ["http://auth-service:8000"],
                     "encoding": "no-op"
+                }
+            ]
+        },
+
+        {
+            "endpoint": "/api/account-delete",
+            "method": "POST",
+            "input_headers": ["Authorization", "Content-Type"],
+            "backend": [
+                {
+                    "url_pattern": "/account-delete",
+                    "method": "POST",
+                    "host": ["http://auth-service:8000"]
                 }
             ]
         }
