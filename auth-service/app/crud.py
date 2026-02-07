@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from .models import UserAuthInfo
 from .schemas import RegisterSchema, LoginSchema, AuthCreateSchema
@@ -14,6 +14,20 @@ async def create_user(db: AsyncSession, login: str, email: str, password: str) -
         email=email,
         password=hash_password(password)
     )
+    
+    stmt = select(UserAuthInfo).where(
+        or_(
+            UserAuthInfo.login == login,
+            UserAuthInfo.email == email
+        ))
+    
+    result = (await db.execute(stmt)).scalar_one_or_none()
+    
+    if result:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Пользователь с таким именем или почтой уже существует'
+        )
     
     auth = UserAuthInfo(**auth_data.model_dump())
     
@@ -33,7 +47,7 @@ async def authenticate_user(db: AsyncSession, login: str, password: str):
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, #? Спорный момент, по идее тоже можно использовать 401, но я лучше 404 использовать буду, чтобы явно указать
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail='User not found'
         )
     
@@ -45,4 +59,4 @@ async def authenticate_user(db: AsyncSession, login: str, password: str):
         
     token_pair = create_token_pair(user.id)
     
-    return token_pair
+    return user, token_pair

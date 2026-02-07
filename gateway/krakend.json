@@ -13,6 +13,18 @@
                     "host": ["http://auth:8000"]
                 }
             ]
+        },
+
+        {
+            "endpoint": "/api/login",
+            "method": "POST",
+            "backend": [
+                {
+                    "url_pattern": "/login",
+                    "method": "POST",
+                    "host": ["http://auth:8000"]
+                }
+            ]
         }
     ]
 }

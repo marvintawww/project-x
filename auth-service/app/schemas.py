@@ -9,7 +9,7 @@ class RegisterSchema(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     
-    DNAME_PATTERN = r"^[A-Za-z]$"
+    DNAME_PATTERN = r"^[A-Za-z]{3,30}$"
     LOGIN_PATTERN = r"^[A-Za-z_0-9]{3,30}$"
     PW_PATTERN = r"^(?=.*\d)(?=.*[!@#$%^&*()-=])(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9_!@#$%^&*()-=]{8,}$"
         

@@ -57,7 +57,7 @@ def refresh_access_token(refresh_token: str):
         if not user_id:
             raise ValueError('Invalid Token')
         
-        return create_access_token(user_id)
+        return create_token_pair(user_id)
     
     except JWTError as e:
         raise ValueError(f'Invalid Token {str(e)}')
