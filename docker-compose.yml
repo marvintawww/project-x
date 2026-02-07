@@ -14,9 +14,11 @@ services:
 
   auth-service:
     build: ./auth-service
+    ports:
+      - "8000:8000"
     depends_on:
       rabbitmq:
-      condition: service_healthy
+        condition: service_healthy
 
   gateway:
     image: devopsfaith/krakend:latest

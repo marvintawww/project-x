@@ -10,11 +10,11 @@
                 {
                     "url_pattern": "/register",
                     "method": "POST",
-                    "host": ["http://auth:8000"]
+                    "host": ["http://auth-service:8000"],
+                    "timeout": "5s"
                 }
             ]
         },
-
         {
             "endpoint": "/api/login",
             "method": "POST",
@@ -22,7 +22,20 @@
                 {
                     "url_pattern": "/login",
                     "method": "POST",
-                    "host": ["http://auth:8000"]
+                    "host": ["http://auth-service:8000"]
+                }
+            ]
+        },
+        {
+            "endpoint": "/api/refresh",
+            "method": "POST",
+            "output_encoding": "no-op",
+            "backend": [
+                {
+                    "url_pattern": "/refresh",
+                    "method": "POST",
+                    "host": ["http://auth-service:8000"],
+                    "encoding": "no-op"
                 }
             ]
         }

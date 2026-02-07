@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import Base, get_db, engine
-from .crud import create_user, authenticate_user
-from .schemas import AuthResponseSchema, RegisterSchema, AuthCreateSchema, AuthInfo, LoginSchema
+from .crud import create_user, authenticate_user, deactivate_user
+from .schemas import AuthResponseSchema, RegisterSchema, RefreshTokenSchema, AuthInfo, LoginSchema, TokenResponseSchema
 from .sender import send_event
-from .jwt import refresh_access_token
+from .jwt import refresh_access_token, get_current_user_id
 
 
 app = FastAPI(
@@ -61,16 +61,26 @@ async def login(login_data: LoginSchema, db: AsyncSession = Depends(get_db)):
 
 @app.post(
     '/refresh',
-    response_model=dict, #! Позже поменять на Pydantic схему
+    response_model=TokenResponseSchema, #! Позже поменять на Pydantic схему
     summary='Refresh atoken pair',
     tags=['Auth']
 )
-async def refresh_token_pair(refresh_token: str):
+async def refresh_token_pair(data: RefreshTokenSchema):
     try:
-        token_pair = refresh_access_token(refresh_token=refresh_token)
-        return token_pair
+        token_pair = refresh_access_token(refresh_token=data.refresh_token)
+        return TokenResponseSchema.model_validate(token_pair)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f'{str(e)}'
         )
+        
+
+@app.post(
+    '/account-delete',
+    response_model=AuthInfo,
+    summary='Deactivate account',
+    tags=['Auth']
+)
+async def account_delete(user_id: int = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
+    return deactivate_user(db=db, user_id=user_id)

@@ -1,5 +1,6 @@
 import re
 from pydantic import BaseModel, Field, EmailStr, field_validator
+from typing import ClassVar
 
 from .validators import regex_validator
 
@@ -9,9 +10,9 @@ class RegisterSchema(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     
-    DNAME_PATTERN = r"^[A-Za-z]{3,30}$"
-    LOGIN_PATTERN = r"^[A-Za-z_0-9]{3,30}$"
-    PW_PATTERN = r"^(?=.*\d)(?=.*[!@#$%^&*()-=])(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9_!@#$%^&*()-=]{8,}$"
+    DNAME_PATTERN: ClassVar[str] = r"^[A-Za-z]{3,30}$"
+    LOGIN_PATTERN: ClassVar[str] = r"^[A-Za-z_0-9]{3,30}$"
+    PW_PATTERN: ClassVar[str] = r"^(?=.*\d)(?=.*[!@#$%^&*()-=])(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9_!@#$%^&*()-=]{8,}$"
         
     @field_validator('password')
     @classmethod
@@ -25,12 +26,10 @@ class RegisterSchema(BaseModel):
     
     @field_validator('display_name')
     @classmethod
-    def login_validator(cls, dn: str) -> str:
+    def displayname_validator(cls, dn: str) -> str:
         return regex_validator(cls.DNAME_PATTERN, dn, 'Имя не соответствует требованиям!')
         
-        
-        
-#? Вообще касаемо AuthCreate у меня есть вопрос все-таки, насколько это правильная реализация
+
 
 class AuthCreateSchema(BaseModel):
     login: str
@@ -43,14 +42,19 @@ class LoginSchema(BaseModel):
     password: str
     
 
+#! Это схема которая выводит информацию пользователя, используется в AuthResponseSchema
+
 class AuthInfo(BaseModel):
     id: int
     login: str
     email: str
+    is_active: bool
     
     class Config:
         from_attributes = True    
         
+
+#! Тут схема, которая включает в себя пользователя и пару токенов, эта схема возвращается в /register и /login
 
 class AuthResponseSchema(BaseModel):
     user: AuthInfo
@@ -58,3 +62,13 @@ class AuthResponseSchema(BaseModel):
     
     class Config:
         from_attributes=True
+        
+        
+#! Пока что схемы для токенов будут здесь        
+
+class RefreshTokenSchema(BaseModel):
+    refresh_token: str
+    
+class TokenResponseSchema(BaseModel):
+    access_token: str
+    refresh_token: str

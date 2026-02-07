@@ -1,4 +1,5 @@
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException, status, Depends
 from datetime import datetime, timezone, timedelta
 from jose import jwt, JWTError
 import secrets
@@ -61,4 +62,22 @@ def refresh_access_token(refresh_token: str):
     
     except JWTError as e:
         raise ValueError(f'Invalid Token {str(e)}')
-        
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/login')
+
+def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
+    try:
+        payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+        try:
+            return int(payload.get('sub'))
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid Token'
+            )
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f'Error {str(e)}'
+        )
