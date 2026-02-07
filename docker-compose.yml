@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  auth:
+    build:
+      - ./auth-service
+
+  gateway:
+    image: devopsfaith/krakend:latest
+    ports:
+      - "8080:8080"
+    
