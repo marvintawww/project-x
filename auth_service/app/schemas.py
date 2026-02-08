@@ -1,6 +1,6 @@
 import re
 from pydantic import BaseModel, Field, EmailStr, field_validator
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from .validators import regex_validator
 
@@ -69,6 +69,10 @@ class AuthResponseSchema(BaseModel):
 class RefreshTokenSchema(BaseModel):
     refresh_token: str
     
+class TokenData(BaseModel):
+    token: str
+    token_id: str
+
 class TokenResponseSchema(BaseModel):
-    access_token: str
-    refresh_token: str
+    access_token: TokenData
+    refresh_token: TokenData

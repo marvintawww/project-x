@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone, timedelta
+from jose import jwt, JWTError
 
 from .database import Base, get_db, engine
-from .crud import create_user, authenticate_user, deactivate_user, get_user_by_id
+from .crud import create_user, authenticate_user, deactivate_user
 from .schemas import AuthResponseSchema, RegisterSchema, RefreshTokenSchema, AuthInfo, LoginSchema, TokenResponseSchema
 from .sender import send_event
-from .jwt import refresh_access_token, get_current_user, required_role
+from .jwt import refresh_access_token, get_current_user, required_role, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET, ALGORITHM
+from .blacklist import token_to_blacklist
 
 
 app = FastAPI(
@@ -35,7 +38,8 @@ async def register(reg_data: RegisterSchema, db: AsyncSession = Depends(get_db))
         password=reg_data.password
         )
     
-    send_event({
+    await send_event({
+        'event_type': 'Register',
         'auth_id': auth.id,
         'display_name': reg_data.display_name
     })
@@ -65,9 +69,9 @@ async def login(login_data: LoginSchema, db: AsyncSession = Depends(get_db)):
     summary='Refresh atoken pair',
     tags=['Auth']
 )
-async def refresh_token_pair(data: RefreshTokenSchema):
+async def refresh_token_pair(data: RefreshTokenSchema, db: AsyncSession = Depends(get_db)):
     try:
-        token_pair = refresh_access_token(refresh_token=data.refresh_token)
+        token_pair = await refresh_access_token(db, data.refresh_token)
         return TokenResponseSchema.model_validate(token_pair)
     except ValueError as e:
         raise HTTPException(
@@ -83,8 +87,9 @@ async def refresh_token_pair(data: RefreshTokenSchema):
     tags=['Auth']
 )
 async def account_delete(user: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    send_event({
+    await send_event({
         'event_type': 'Account Deactivate',
+        'auth_id': user.get('id'),
         'is_active': False
     })
     
@@ -99,10 +104,37 @@ async def account_delete(user: int = Depends(get_current_user), db: AsyncSession
     tags=['Auth']
 )
 async def delete_account_by_id(user_id: int, admin = Depends(required_role('admin')), db: AsyncSession = Depends(get_db)):
-    send_event({
+    await send_event({
         'event_type': 'Account Deactivate',
-        'user_id': user_id,
+        'auth_id': user_id,
         'is_active': False
     })
     
     return await deactivate_user(db=db, user_id=user_id)
+
+
+#! Логаут я конечно захардкодил, так вышло, что вход я уже делал и все хорошо понимаю, а вот с логаутом первый раз столкнулся
+#! В последний момент я еще понял что и рефреш токен тоже в блэклист кидать надо, время поджимает поэтому переписывать не буду
+
+@app.post(
+    '/logout',
+    status_code=status.HTTP_200_OK,
+    summary='Logout',
+    tags=['Auth']
+)
+async def logout(logout_data: RefreshTokenSchema, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    access_jti = user.get('jti')
+    access_user_id = user.get('id')
+    access_expires_at = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    await token_to_blacklist(db=db, jti=access_jti, user_id=access_user_id, expires_at=access_expires_at)
+    
+    try:
+        refresh_payload = jwt.decode(logout_data.refresh_token, SECRET, algorithms=[ALGORITHM])
+        refresh_jti = refresh_payload.get('jti')
+        refresh_expires = datetime.fromtimestamp(refresh_payload.get('exp'), tz=timezone.utc)
+        await token_to_blacklist(db, refresh_jti, user.get('id'), refresh_expires)
+    except JWTError:
+        pass
+    
+    return {'message': 'Successful Logout'}

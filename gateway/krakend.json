@@ -52,6 +52,58 @@
                     "host": ["http://auth-service:8000"]
                 }
             ]
+        },
+
+        {
+            "endpoint":"/api/account-delete/{user_id}",
+            "method": "POST",
+            "input_headers": ["Authorization", "Content-Type"],
+            "backend": [
+                {
+                    "url_pattern": "/account-delete/{user_id}",
+                    "method": "POST",
+                    "host": ["http://auth-service:8000"]
+                }
+            ]
+        },
+
+        {
+            "endpoint": "/api/logout",
+            "method": "POST",
+            "input_headers": ["Authorization", "Content-Type"],
+            "backend": [
+                {
+                    "url_pattern": "/logout",
+                    "method": "POST",
+                    "host": ["http://auth-service:8000"]
+                }
+            ]
+        },
+
+        {
+            "endpoint": "/api/profile",
+            "method": "GET",
+            "input_headers": ["Authorization", "Content-Type"],
+            "backend": [
+                {
+                    "url_pattern": "/profile",
+                    "method": "GET",
+                    "host": ["http://user-service:8001"]
+                }
+            ]
+        },
+
+        {
+            "endpoint": "/api/settings/edit-bio",
+            "method": "PATCH",
+            "input_headers": ["Authorization", "Content-Type"],
+            "backend": [
+                {
+                    "url_pattern": "/edit-bio",
+                    "method": "PATCH",
+                    "host": ["http://user-service:8001"]
+                }
+            ]
         }
     ]
 }

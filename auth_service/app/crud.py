@@ -42,7 +42,6 @@ async def create_user(db: AsyncSession, login: str, email: str, password: str) -
     return auth, token_pair
 
 
-
 async def authenticate_user(db: AsyncSession, login: str, password: str) -> tuple[UserAuthInfo, dict]:
     stmt = select(UserAuthInfo).where(UserAuthInfo.login == login)
     result = await db.execute(stmt)
