@@ -5,8 +5,8 @@ import os
 from sqlalchemy import select
 
 from .database import AsyncSessionLocal, engine, Base
-from .models import User
-from .schemas import EventData
+from .models.user import User
+from .schemas.event import EventData
 
 async def message_proccess(message: aio_pika.IncomingMessage):
     async with message.process():

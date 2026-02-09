@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class UserResponseSchema(BaseModel):
     id: int
@@ -14,12 +13,3 @@ class UserResponseSchema(BaseModel):
 class UserUpdateSchema(BaseModel):
     display_name: str | None = None
     
-    
-class EventData(BaseModel):
-    auth_id: int
-    event_type: str
-    display_name: str | None = None
-    is_active: bool | None = True
-    
-    class Config:
-        from_attributes=True

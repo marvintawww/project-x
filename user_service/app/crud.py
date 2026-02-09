@@ -2,8 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from fastapi import HTTPException, status
 
-from .models import User
-from .schemas import UserUpdateSchema
+from .models.user import User
+from .schemas.user import UserUpdateSchema
 
 async def get_one_user(user_id: int, db: AsyncSession) -> User | None:
     stmt = select(User).where(User.id == user_id)

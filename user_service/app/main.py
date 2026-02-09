@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .schemas import UserResponseSchema, UserUpdateSchema
+from .schemas.user import UserResponseSchema, UserUpdateSchema
 from .consumer import start_consumer
 from .jwt_checker import get_current_user
 from .database import get_db

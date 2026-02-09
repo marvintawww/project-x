@@ -6,3 +6,4 @@ aio_pika
 python-jose[cryptography]
 passlib[argon2]
 email-validator
+my-shared-lib
